@@ -43,6 +43,20 @@
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="10dp"
                     android:textAppearance="?android:attr/textAppearanceMedium" />
+
+                <TextView
+                    android:id="@+id/overview_runningtemp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="10dp"
+                    android:textAppearance="?android:attr/textAppearanceSmall" />
+
+                <TextView
+                    android:id="@+id/overview_iob"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="10dp"
+                    android:textAppearance="?android:attr/textAppearanceSmall" />
             </LinearLayout>
 
         </LinearLayout>
@@ -60,12 +74,11 @@
 
             <Button
                 android:id="@+id/overview_canceltemp"
-                style="?android:attr/borderlessButtonStyle"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="10dp"
                 android:layout_weight="0.5"
-                android:textColor="@color/colorCancelTempButton"
+                android:background="@color/colorCancelTempButton"
                 android:text="Cancel temp basal" />
 
         </LinearLayout>
@@ -78,22 +91,20 @@
 
             <Button
                 android:id="@+id/overview_settempbasal"
-                style="?android:attr/borderlessButtonStyle"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="10dp"
                 android:layout_weight="0.5"
-                android:textColor="@color/colorSetTempButton"
+                android:background="@color/colorSetTempButton"
                 android:text="TempBasal" />
 
             <Button
                 android:id="@+id/overview_extendedbolus"
-                style="?android:attr/borderlessButtonStyle"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="10dp"
                 android:layout_weight="0.5"
-                android:textColor="@color/colorSetExtendedButton"
+                android:background="@color/colorSetExtendedButton"
                 android:text="Extended Bolus" />
         </LinearLayout>
 
@@ -104,22 +115,20 @@
 
             <Button
                 android:id="@+id/overview_treatment"
-                style="?android:attr/borderlessButtonStyle"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="10dp"
                 android:layout_weight="0.5"
-                android:textColor="@color/colorTreatmentButton"
+                android:background="@color/colorTreatmentButton"
                 android:text="@string/overview_treatment_label" />
 
             <Button
                 android:id="@+id/overview_wizard"
-                style="?android:attr/borderlessButtonStyle"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="10dp"
                 android:layout_weight="0.5"
-                android:textColor="@color/colorWizardButton"
+                android:background="@color/colorWizardButton"
                 android:text="@string/overview_calculator_label" />
         </LinearLayout>
 
