@@ -1,0 +1,379 @@
+datasource db {
+    provider     = "postgresql"
+    url          = env("DATABASE_URL")
+    relationMode = "prisma"
+    extensions   = [pgvector(map: "vector")]
+}
+
+generator client {
+    provider        = "prisma-client-js"
+    previewFeatures = ["postgresqlExtensions"]
+}
+
+enum Role {
+    user
+    admin
+}
+
+enum IntegrationType {
+    google_calendar
+    google_meet
+}
+
+enum AgentType {
+    ANTI_THEFT // requires valid US phonenumber
+    AUTOMATED_CUSTOMER_SUPPORT // requires valid US phonenumber
+    CHATBOT // doesn't require phonenumber
+}
+
+enum EntityType {
+    AGENT
+    USER
+    CONVERSATION
+}
+
+enum KnowledgeBaseType {
+    TXT
+    WEB_PAGES
+    PDF
+    YT_VIDEOS
+    NOTION // COMING SOON
+}
+
+enum SubscriptionStatus {
+    // Currently in a trial period.
+    on_trial
+
+    // Active with ongoing payments.
+    active
+
+    // Payment collection paused.
+    paused
+
+    // Renewal payment failed, with retries.
+    past_due
+
+    // Unsuccessful payment recovery after 4 attempts.
+    unpaid
+
+    // Future payments cancelled, but still on a grace period.
+    cancelled
+
+    // Subscription has expired.
+    expired
+}
+
+enum SubscriptionType {
+    IN_APP // handle the in-app subscription for premium features
+    TWILIO_PHONE_NUMBERS // handle the twilio phone numbers subscription
+}
+
+enum HandoverCondition {
+    emergency
+    help
+}
+
+enum KnowledgeBaseStatus {
+    trained
+    untrained
+}
+
+model Users {
+    id                String                  @id @default(cuid())
+    uId               String                  @unique @default(cuid())
+    username          String?
+    fullname          String?
+    email             String
+    avatar            String?
+    role              Role                    @default(user)
+    google_ref_token  String?
+    createdAt         DateTime                @default(now())
+    conversations     Conversations[]
+    used_numbers      UsedPhoneNumbers[]
+    purchased_numbers PurchasedPhoneNumbers[]
+    agents            Agents[]
+    subscriptions     Subscriptions[]
+    knowledge_base    KnowledgeBase[]
+
+    @@map(name: "users")
+}
+
+// users are limited to 2 agents per workspace
+// AI Agents
+model Agents {
+    id     String    @id @default(cuid())
+    userId String
+    name   String
+    type   AgentType
+
+    // by default , every agent remains deactivated
+    activated Boolean @default(false)
+
+    // forwarding number (AUTOMATED CUSTOMER SUPPORT ONly)
+    forwarding_number ForwardingNumber?
+
+    created_at            DateTime               @default(now())
+    Conversations         Conversations[]
+    users                 Users                  @relation(fields: [userId], references: [uId], onDelete: Cascade)
+    protected_numbers     ProtectedNumbers[]
+    used_number           UsedPhoneNumbers?
+    linked_knowledge_base LinkedKnowledgeBase[]
+    agent_settings        AgentSettings?
+    purchased_number      PurchasedPhoneNumbers?
+
+    @@index([userId])
+    @@map(name: "agents")
+}
+
+model AgentSettings {
+    id      String @id @default(cuid())
+    agentId String @unique
+
+    // GENERAL (ALL Agents)
+    welcome_message String?
+
+    // ANTI-THEFT seetings (ONLY)
+    allow_handover     Boolean            @default(false)
+    handover_condition HandoverCondition? @default(emergency)
+    security_code      String? // if it an emergency, this code would be required.
+
+    agents Agents @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+    @@index([agentId])
+    @@map(name: "agent_settings")
+}
+
+model ForwardingNumber {
+    id         String   @id @default(cuid())
+    agentId    String   @unique
+    phone      String   @unique
+    dial_code  String?
+    country    String?
+    created_at DateTime @default(now())
+
+    agents Agents @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+    @@index([agentId])
+    @@map(name: "forwarding_numbers")
+}
+
+// ANTI_THEFT Only (TODOS)
+model ProtectedNumbers {
+    id         String   @id @default(cuid())
+    agentId    String
+    phone      String   @unique
+    dial_code  String?
+    country    String?
+    created_at DateTime @default(now())
+
+    agents Agents @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+    @@index([agentId])
+    @@map(name: "protected_numbers")
+}
+
+// Table to store users purchased phone numbers
+model PurchasedPhoneNumbers {
+    id       String  @id @default(cuid())
+    userId   String
+    phone    String  @unique
+    country  String?
+    sub_id   String? @unique // subscription id
+    agent_id String? @unique // agent id
+
+    // twilio config
+    phone_number_sid String?
+    bundle_sid       String?
+
+    is_deleted Boolean? @default(false)
+
+    created_at DateTime @default(now())
+
+    users  Users   @relation(fields: [userId], references: [uId], onDelete: Cascade)
+    agents Agents? @relation(fields: [agent_id], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@map("purchased_phone_numbers")
+}
+
+model UsedPhoneNumbers {
+    id         String   @id @default(cuid())
+    agentId    String   @unique
+    userId     String
+    phone      String   @unique
+    dial_code  String?
+    country    String?
+    created_at DateTime @default(now())
+
+    is_deleted Boolean? @default(false)
+
+    agents Agents @relation(fields: [agentId], references: [id], onDelete: Cascade)
+    users  Users  @relation(fields: [userId], references: [uId], onDelete: Cascade)
+
+    @@index([agentId])
+    @@index([userId])
+    @@map(name: "used_phone_numbers")
+}
+
+model KnowledgeBase {
+    id         String               @id @default(cuid())
+    userId     String
+    status     KnowledgeBaseStatus? @default(untrained)
+    created_at DateTime             @default(now())
+
+    kb_data               KnowledgeBaseData[]
+    user                  Users                 @relation(fields: [userId], references: [uId], onDelete: Cascade)
+    linked_knowledge_base LinkedKnowledgeBase[]
+
+    @@index([userId])
+    @@map("knowledge_base")
+}
+
+// Knowledge base data (TXT, WEB_PAGES, PDF, YT_VIDEOS)
+model KnowledgeBaseData {
+    id         String                 @id @default(cuid())
+    kb_id      String
+    user_id    String
+    type       KnowledgeBaseType
+    title      String?
+    embedding  Unsupported("vector")?
+    content    String
+    created_at DateTime               @default(now())
+    updated_at DateTime               @updatedAt
+
+    kb KnowledgeBase @relation(fields: [kb_id], references: [id], onDelete: Cascade)
+
+    @@index([kb_id])
+    @@map(name: "knowledge_base_data")
+}
+
+// Linked Knowledge base to agents
+model LinkedKnowledgeBase {
+    id         String   @id @default(cuid())
+    agentId    String
+    kb_id      String
+    created_at DateTime @default(now())
+
+    agents Agents        @relation(fields: [agentId], references: [id], onDelete: Cascade)
+    kb     KnowledgeBase @relation(fields: [kb_id], references: [id], onDelete: Cascade)
+
+    @@index([agentId])
+    @@index([kb_id])
+    @@map(name: "linked_knowledge_base")
+}
+
+// integrations added by user
+model Integration {
+    id      String          @id @default(cuid())
+    wsId    String          @unique
+    type    IntegrationType
+    enabled Boolean         @default(false)
+
+    @@index([wsId])
+    @@map(name: "integrations")
+}
+
+model Conversations {
+    id         String   @id @default(cuid())
+    wsId       String
+    agentId    String
+    userId     String
+    created_at DateTime @default(now())
+    escalated  Boolean  @default(false)
+
+    user     Users      @relation(fields: [userId], references: [id])
+    Agents   Agents?    @relation(fields: [agentId], references: [id])
+    messages Messages[]
+
+    conv_account ConversationAccount[]
+
+    @@index([wsId])
+    @@index([agentId])
+    @@index([userId])
+    @@map(name: "conversations")
+}
+
+// Only mean't for users using the chatbot widget
+model ConversationAccount {
+    id          String   @id @default(cuid())
+    wsId        String
+    con_user_id String
+    email       String
+    name        String
+    verified    Boolean  @default(false)
+    created_at  DateTime @default(now())
+
+    conversations Conversations @relation(fields: [con_user_id], references: [id])
+
+    @@index([wsId])
+    @@index([con_user_id])
+    @@map(name: "conversation_account")
+}
+
+model MessageEntity {
+    id         String     @id @default(cuid())
+    entityId   String
+    entityType EntityType
+    message    Messages[]
+
+    @@unique([entityId])
+    @@map(name: "message_entity")
+}
+
+model Messages {
+    id         String   @id @default(cuid())
+    convId     String
+    entityId   String
+    content    String
+    created_at DateTime @default(now())
+    agentsId   String?
+
+    conversations Conversations @relation(fields: [convId], references: [id])
+    entity        MessageEntity @relation(fields: [entityId], references: [entityId])
+
+    @@index([entityId])
+    @@index([agentsId])
+    @@index([convId])
+    @@map(name: "messages")
+}
+
+// Subscriptions
+
+model Subscriptions {
+    id         String  @id @default(cuid())
+    uId        String
+    user_name  String?
+    user_email String?
+
+    type SubscriptionType
+
+    grace_period DateTime? // 3 days grace period for (TWILIO_PHONE_NUMBERS)
+
+    product_id   String
+    product_name String?
+    variant_id   String?
+    variant_name String?
+
+    order_id String
+    store_id String
+
+    is_deleted Boolean? @default(false)
+
+    subscription_id String? @unique
+    customer_id     String?
+
+    card_brand     String?
+    card_last_four String?
+
+    status SubscriptionStatus @default(on_trial)
+
+    ends_at   DateTime?
+    renews_at DateTime?
+    createdAt DateTime  @default(now())
+
+    test_mode Boolean @default(false)
+
+    user Users @relation(fields: [uId], references: [uId])
+
+    @@map(name: "subscriptions")
+}

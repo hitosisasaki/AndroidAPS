@@ -1,0 +1,27 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compileOnSave": false,
+  "compilerOptions": {
+    "target": "es6",
+    "lib": ["es2017", "esnext.asynciterable", "DOM"],
+    "typeRoots": ["node_modules/@types"],
+    "module": "es6",
+    "allowSyntheticDefaultImports": true,
+    // "module": "ES2022", // "ES2022" etc
+    // "moduleResolution": "Node16", // "Node", "Node16"
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["./**/*", "./src/**/*"],
+  "exclude": ["node_modules", "./dist/**/*"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"],
+    // enable typescript to compile faster
+    "swc": true,
+    "esm": true
+  }
+}
