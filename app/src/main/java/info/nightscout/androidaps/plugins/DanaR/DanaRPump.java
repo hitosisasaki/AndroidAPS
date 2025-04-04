@@ -9,6 +9,9 @@ public class DanaRPump {
     public static final int UNITS_MGDL = 0;
     public static final int UNITS_MMOL = 1;
 
+    Date lastConnection = new Date(0);
+    Date lastSettingsRead = new Date(0);
+
     // Info
     public String serialNumber = "";
     public Date shippingDate = new Date(0);
@@ -21,7 +24,7 @@ public class DanaRPump {
     public boolean pumpSuspended;
     public boolean calculatorEnabled;
     public double dailyTotalUnits;
-    public int dailyMaxRate;
+    public int maxDailyTotalUnits;
 
     public double iob;
 
@@ -68,14 +71,10 @@ public class DanaRPump {
     public int nightCF;
 
 
-    public class PumpProfile {
-        public double[] basalValue = new double[48];
-    }
     public int activeProfile = 0;
-    public PumpProfile[] pumpProfiles = new PumpProfile[4];
+    public double[][] pumpProfiles = null;
 
     //Limits
     public double maxBolus;
     public double maxBasal;
-    public double dailyMax;
 }
