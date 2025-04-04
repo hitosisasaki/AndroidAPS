@@ -1,0 +1,73 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1>Invoices</h1>
+  <%= link_to export_invoices_path, class: "btn btn-success" do %>
+    <i class="fas fa-file-excel me-2"></i>Export to Excel
+  <% end %>
+</div>
+
+<div class="mb-4">
+  <%= form_with url: invoices_path, method: :get, local: false, class: "row g-3", data: { controller: "live-filter", live_filter_target: "form", turbo_frame: "invoices" } do |f| %>
+    <div class="col-auto">
+      <%= f.select :confirmed, [["All", nil], ["Confirmed", "true"]], { selected: params[:confirmed] || "true" }, class: "form-select", data: { action: "change->live-filter#submit" } %>
+    </div>
+    <div class="col-auto">
+      <%= f.select :shipping, [["All", nil], ["Shipping", "true"], ["Other", "false"]], { selected: params[:shipping] || "true" }, class: "form-select", data: { action: "change->live-filter#submit" } %>
+    </div>
+    <div class="col-auto">
+      <%= f.select :ap_or_ar, [["All", nil], ["AP", "ap"], ["AR", "ar"]], { selected: params[:ap_or_ar] || "ap" }, class: "form-select", data: { action: "change->live-filter#submit" } %>
+    </div>
+    <div class="col-auto">
+      <%= f.select :view_mode, [["Table", "table"], ["Card", "card"]], { selected: params[:view_mode] || "table" }, class: "form-select", data: { action: "change->live-filter#submit" } %>
+    </div>
+    <div class="col-auto">
+      <%= f.select :has_shipment_no, [["All", nil], ["With Shipment Number", "true"]], { selected: params[:has_shipment_no] || "false" }, class: "form-select", data: { action: "change->live-filter#submit" } %>
+    </div>
+    <div class="col-auto">
+      <%= f.select :qa_flag, [["All", nil], ["Flagged", "true"]], { selected: params[:qa_flag] }, class: "form-select", data: { action: "change->live-filter#submit" } %>
+    </div>
+    <div class="col-auto">
+      <%= f.text_field :search, value: params[:search], placeholder: "Search invoices", class: "form-control", data: { action: "input->live-filter#submit" } %>
+    </div>
+  <% end %>
+</div>
+
+<%= turbo_frame_tag "invoices" do %>
+  <% unless params[:view_mode] == "card" %>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Invoice #</th>
+            <th>Description</th>
+            <th>Total</th>
+            <th>Payment Terms</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @documents.each do |document| %>
+            <tr class="border-bottom">
+              <td><%= document.invoice_content['invoice_number'] %></td>
+              <td><%= document.invoice_content['description'] %></td>
+              <td><%= ViewUtils.currency_format(document.invoice_content['total'], document.invoice_content['currency']) %></td>
+              <td><%= document.invoice_content['payment_terms'] %></td>
+              <td>
+                <%= link_to "View Original", rails_blob_path(document.file, disposition: "inline"), target: "_blank", class: "btn btn-sm btn-outline-secondary" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="row">
+      <div class="col-12">
+        <% @documents.each do |document| %>
+          <div class="card mb-3">
+            <%= render partial: "invoice_card", locals: { document: document } %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+<% end %>
