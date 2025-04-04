@@ -21,7 +21,7 @@ public class DanaRPump {
     public boolean pumpSuspended;
     public boolean calculatorEnabled;
     public double dailyTotalUnits;
-    public int maxDailyTotalUnits;
+    public int dailyMaxRate;
 
     public double iob;
 

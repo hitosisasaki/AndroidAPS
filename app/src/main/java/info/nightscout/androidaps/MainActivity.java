@@ -174,9 +174,9 @@ public class MainActivity extends AppCompatActivity {
                             REQUEST_CODE_ASK_PERMISSIONS
                     );
                 }
-                Intent alertServiceIntent = new Intent(getApplicationContext(), AlertService.class);
-                alertServiceIntent.putExtra("alertText", getString(R.string.nav_test_alert));
-                getApplicationContext().startService(alertServiceIntent);
+                Intent alarmServiceIntent = new Intent(getApplicationContext(), AlertService.class);
+                alarmServiceIntent.putExtra("alarmText", getString(R.string.nav_test_alarm));
+                getApplicationContext().startService(alarmServiceIntent);
                 break;
             case R.id.nav_exit:
                 log.debug("Exiting");
